@@ -45,7 +45,13 @@ try:
 except ImportError:
     using_collective_recaptcha = False
 
-
+def gLower(string):
+    # returns objet.lower() si possible
+    if hasattr(string, 'lower'):
+        return string.lower()
+    else:
+        return string 
+    
 # Dumb class to work around bug in _getPropertyProviderForUser which
 # causes it to always operate on portal.acl_users
 class BasicPropertySheet:
@@ -428,10 +434,24 @@ class Survey(ATCTOrderedFolder):
 
     def getRespondentsList(self):
         """Return a list of respondents details"""
+        sortingQuestion=None
+        questions = self.getFolderContents(
+            contentFilter={'portal_type': [
+                'Survey Date Question',
+                'Survey Select Question',
+                'Survey Text Question',
+                ]},
+            full_objects=True)
+        for question in questions:
+            if question.getId().endswith('_sortingQuestion'):
+                sortingQuestion=question        
         users = {}
         for user in self.respondents.keys():
             users[user] = 1
-        return users.keys()
+        usersK=users.keys()
+        if sortingQuestion is not None:
+            usersK.sort(key=lambda user: gLower(sortingQuestion.getAnswerFor(user)) )
+        return usersK
 
     security.declareProtected(ViewSurveyResults, 'getRespondentDetails')
 
